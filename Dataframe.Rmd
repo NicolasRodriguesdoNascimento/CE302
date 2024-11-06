@@ -1,0 +1,144 @@
+
+# Lista de Exercícios 04
+```{r}
+
+require(dplyr)
+
+library(readr)
+
+
+Dataset_FireWatch_Brazil_Q1_2024 <- read_csv("~/Downloads/Dataset_FireWatch_Brazil_Q1_2024.csv")
+Dataset_FireWatch_Brazil_Q2_2024 <- read_csv("~/Downloads/Dataset_FireWatch_Brazil_Q2_2024.csv")
+Dataset_FireWatch_Brazil_Q3_2024 <- read_csv("~/Downloads/Dataset_FireWatch_Brazil_Q3_2024.csv")
+
+
+FireWatch <- rbind(Dataset_FireWatch_Brazil_Q1_2024, Dataset_FireWatch_Brazil_Q2_2024, Dataset_FireWatch_Brazil_Q3_2024)
+
+
+
+
+
+```
+
+
+
+1. Utilizando o banco de dados `Queimadas`, crie uma tabela com a contagem de incêndios por estado.
+
+```{r}
+
+FireWatch %>%
+  group_by(estado) %>%
+  summarise(incendios = sum(avg_frp, na.rm = TRUE))
+
+```
+
+2. Qual o número de queimadas por região?
+
+```{r}
+
+FireWatch$regiao <- FireWatch$estado
+
+FireWatch$regiao <- FireWatch$regiao %>%
+  str_replace('PARANÁ|RIO GRANDE DO SUL|SANTA CATARINA', 'Sul') %>%
+  str_replace('ACRE|AMAPÁ|AMAZONAS|PARÁ|RONDÔNIA|RORAIMA|TOCANTINS', 'Norte') %>%
+  str_replace('MARANHÃO|PIAUÍ|CEARÁ|RIO GRANDE DO NORTE|PERNAMBUCO|PARAÍBA|SERGIPE|ALAGOAS|BAHIA', 'Nordeste') %>%
+  str_replace('MATO GROSSO|MATO GROSSO DO SUL|GOIÁS', 'Centro-oeste') %>%
+  str_replace('SÃO PAULO|RIO DE JANEIRO|ESPÍRITO SANTO|MINAS GERAIS', 'Sudeste') %>%
+  str_replace('Centro-oeste DO SUL', 'Centro-oeste')
+
+FireWatch %>%
+  group_by(regiao) %>%
+  summarise(incendios = sum(avg_frp, na.rm = TRUE))
+
+
+```
+
+
+
+
+3. Para a região com maior número de queimadas, identifique: 
+```{r}
+
+
+
+regiao <- FireWatch %>%
+  group_by(regiao) %>%
+  summarise(incendios = sum(avg_frp, na.rm = TRUE)) %>%
+  arrange(desc(incendios)) %>%
+  head(1) %>%
+  pull(regiao)
+
+Filtrado_regiao <- FireWatch %>%
+  filter(regiao == regiao)
+
+
+```
+
+
+
+    a. A cidade com maior número de queimadas.
+    
+    ```{r}
+    
+    Filtrado_regiao %>%
+      group_by(municipio) %>%
+      summarise(incendios = sum(avg_frp)) %>%
+      arrange(desc(incendios)) %>%
+      head(1)
+    
+    ```
+    
+    b. A data com maior número de queimadas.
+    
+    ```{r}
+    
+    
+    
+    
+        Filtrado_regiao %>%
+      group_by(data) %>%
+      summarise(incendios = sum(avg_frp)) %>%
+      arrange(desc(incendios)) %>%
+      head(1)
+    
+    ```
+    
+    c. O mês com maior número de queimadas.
+    ```{r}
+    
+    Filtrado_regiao %>%
+      mutate(mes = format(as.Date(data), "%B")) %>%
+      group_by(mes) %>%
+      summarise(incendios = sum(avg_frp, na.rm = TRUE)) %>%
+      arrange(desc(incendios)) %>%
+      head(1)
+    
+    ```
+    
+    
+4. Quantas cidades tiveram risco de fogo acima de 90% no mês de julho?
+
+```{r}
+
+FireWatch %>%
+  mutate(mes = format(as.Date(data), "%B")) %>%
+  filter(mes == 'julho') %>%
+  group_by(municipio) %>%
+  summarise(risco = mean(avg_risco_fogo)) %>%
+  filter(risco > 90) %>%
+  pull(risco) %>%
+  length()
+
+```
+
+
+5. Qual a média de risco de fogo por estado?
+
+```{r}
+
+FireWatch %>%
+  group_by(estado) %>%
+  summarise(risco = mean(avg_risco_fogo))
+
+
+```

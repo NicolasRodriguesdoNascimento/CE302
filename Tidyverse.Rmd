@@ -1,0 +1,373 @@
+---
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+
+### Tidyverse
+
+1.  Para esse exercício você deverá utilizar o banco de dados
+    `chocolate.csv.gz`.
+
+O dicionário das variáveis encontra-se disponível abaixo.
+
+```{r}
+
+require(tidyverse)
+library(readr)
+chocolate <- read_csv("~/Downloads/Dados/chocolate.csv")
+
+```
+
+| Variável        | Descrição                                         |
+|-----------------|---------------------------------------------------|
+| local_compania  | Região do Fabricante                              |
+| ano             | Ano da Revisão                                    |
+| origem_cacau    | País de Origem dos Grãos de Cacau                 |
+| cocoa_percent   | Percentagem de Cacau (% chocolate)                |
+| ingredientes    | Ingredientes                                      |
+| caracteristicas | Características mais memoráveis daquele chocolate |
+
+**Lista de ingredientes**: "\#": representa o número de ingredientes no
+chocolate; B: Grãos, S: Açúcar, S\*: Adoçante diferente de açúcar de
+cana branco ou beterraba, C: Manteiga de Cacau, V: Baunilha, L:
+Lecitina, Sa: Sal
+
+a.  Quantos países produzem chocotale?
+
+```{r}
+
+chocolate %>%
+  pull(local_compania) %>%
+    unique() %>%
+      length() %>%
+        print()
+
+```
+
+b.  Quantos chocolates existem com pelo menos 3 ingredientes?
+
+```{r}
+chocolate %>%
+  separate(col = ingredientes,
+           into = c('quantia','tipos'),
+           sep = '-') %>%
+    filter(quantia>=3) %>%
+      pull(quantia) %>%
+        length()
+```
+
+c.  Quantos chocolates existem com 5 ingredientes?
+
+```{r}
+chocolate %>%
+  separate(col = ingredientes,
+           into = c('quantia','tipos'),
+           sep = '-') %>%
+    filter(quantia == 5) %>%
+      pull(quantia) %>%
+        length()
+```
+
+d.  Quantos chocolates existem com pelo menos 4 características
+    memoráveis?
+
+```{r}
+
+    quantias <- chocolate %>%
+      pull(caracteristicas) %>%
+        str_count(',')+1
+    quantias[quantias>=4] %>%
+      length()
+      
+
+        
+```
+
+e.  Quantos chocolates existem com Sal em sua composição?
+
+```{r}
+
+chocolate %>%
+  separate(col = ingredientes,
+           into = c('quantia','tipos'),
+           sep = '-') %>%
+    filter(grepl('Sa', tipos)) %>%
+      pull(tipos) %>%
+        length()
+
+```
+
+f.  Quantos chocolates existem com Baunilha em sua composição?
+
+```{r}
+
+chocolate %>%
+  separate(col = ingredientes,
+           into = c('quantia','tipos'),
+           sep = '-') %>%
+    filter(grepl('V', tipos)) %>%
+      pull(tipos) %>%
+        length()
+
+```
+
+
+
+g.  Quantos chocolates existem com Lecitina e Baunilha em sua
+    composição?
+
+```{r}
+
+chocolate %>%
+  separate(col = ingredientes,
+           into = c('quantia','tipos'),
+           sep = '-') %>%
+    filter(grepl('V|L', tipos)) %>%
+      pull(tipos) %>%
+        length()
+
+```
+
+<!-- -->
+
+2.  Para esse exercício você deverá utilizar os banco de dados
+    `Art.csv.gz` e `Art_Moma.csv.gz`. Desconsidere artistas sem
+    nacionalidade e/ou sem nome.
+
+```{r}
+art_moma <- read_csv("~/Downloads/Dados/Art_Moma.csv")
+art <- read_csv("~/Downloads/Dados/Art.csv")
+
+arte_total <- inner_join(art_moma, art, by = 'artist_unique_id')
+
+```
+
+O dicionário das variáveis encontra-se disponível abaixo.
+
+| variável                   | descrição                                                                      |
+|------------------|------------------------------------------------------|
+| artist_name                | O nome de cada artista                                                         |
+| edition_number             | O número da edição do livro.                                                   |
+| year                       | O ano de publicação de uma determinada edição do livro                         |
+| artist_nationality         | A nacionalidade de um artista.                                                 |
+| artist_nationality_other   | A nacionalidade do artista                                                     |
+| artist_gender              | O gênero do artista                                                            |
+| artist_race                | A raça do artista                                                              |
+| artist_ethnicity           | A etnia do artista                                                             |
+| book                       | Qual livro, "Janson" ou "Gardner"                                              |
+| space_ratio_per_page_total | A área em centímetros quadrados do texto e da figura de um determinado artista |
+| artist_unique_id           | O número de identificação exclusivo atribuído aos artistas                     |
+| moma_count_to_year         | O número total de exposições já realizadas pelo Museu de Arte Moderna (MoMA)   |
+| whitney_count_to_year      | O número de exposições realizadas pelo The Whitney                             |
+| artist_race_nwi            | O indicador de raça não branca para a raça do artista                          |
+
+a.  Qual a média de exposições realizadas pelo MoMA e pelo Whitney por
+    ano?
+
+```{r}
+
+
+arte_total %>%
+  select(moma_count_to_year, whitney_count_to_year) %>%
+  colMeans()
+
+```
+
+b.  Qual a média de exposições realizadas pelo MoMA e pelo Whitney por
+    ano para artistas de raça não branca?
+
+```{r}
+
+arte_total %>%
+  filter(artist_race != 'White') %>%
+    select(moma_count_to_year, whitney_count_to_year) %>%
+      colMeans()
+
+```
+
+c.  Quais os quatro artistas com mais exposições realizadas pelo MoMA?
+
+```{r}
+
+
+
+arte_total %>%
+  select(artist_name, moma_count_to_year) %>%
+      group_by(artist_name) %>%
+        summarise(quantia = sum(moma_count_to_year)) %>%
+        arrange(desc(quantia)) %>%
+          head(4)
+
+
+```
+
+d.  Do total de artistas, quantos são homens e quantos são mulheres?
+
+```{r}
+
+arte_total %>%
+  pull(artist_gender) %>%
+      table()
+
+```
+
+e.  Do total de artistas, qual as cinco nacionalidades predominante?
+
+```{r}
+
+arte_total %>%
+  pull(artist_nationality) %>%
+    table() %>%
+      sort(decreasing = TRUE) %>%
+      head(5) 
+
+```
+
+f.  Dos artistas que expuseram no MoMA, quantos aparecem em cada livro?
+    E dos que expuseram no Whitney?
+
+```{r}
+
+arte_total %>%
+  filter(moma_count_to_year > 0) %>%
+    group_by(book) %>%
+      summarise(contagem = n_distinct(artist_name))
+      
+arte_total %>%
+  filter(whitney_count_to_year > 0) %>%
+    group_by(book) %>%
+      summarise(contagem = n_distinct(artist_name))
+
+```
+
+g.  Qual a média de espaço ocupado por página de cada artista?
+
+```{r}
+arte_total %>%
+  group_by(artist_name) %>%
+    summarise(media = mean(space_ratio_per_page_total))
+```
+
+<!-- -->
+
+3.  Para esse exercício você deverá utilizar os banco de dados
+    `refugiados_pais.csv.gz` e `refugiados.csv.gz`. Considere apenas
+    observações completas.
+
+```{r}
+
+refugiados1 <- read.csv("~/Downloads/Dados/refugiados.csv")
+
+refugiados2 <- read.csv("~/Downloads/Dados/refugiados_pais.csv")
+
+refugiados1
+
+refugiados2
+
+colnames(refugiados1)
+
+colnames(refugiados2)
+
+refugiados <- inner_join(refugiados1, refugiados2, by = c('id_destino' = 'id'))
+
+
+colnames(refugiados2) <- c('id','nome_origem','regiao_origem','subregiao_origem')
+
+refugiados <- inner_join(refugiados, refugiados2, by = c('id_origem' = 'id'))
+
+```
+
+<!-- -->
+
+a.  Qual a média de refugiados por país?
+
+```{r}
+
+refugiados %>%
+  group_by(nome) %>%
+    summarise(media = mean(refugiados))
+
+
+```
+
+b.  Quantos refugiados houveram saíndo do Afeganistão em 1990? E a
+    partir de 2000?
+
+```{r}
+    
+  refugiados %>%
+      filter(ano == 1990 & nome_origem == 'Afghanistan') %>%
+        pull(refugiados) %>%
+          sum()
+  
+  refugiados %>%
+    filter(ano > 2000 & nome_origem == 'Afghanistan') %>%
+      pull(refugiados) %>%
+        sum()
+```
+
+c.  Crie a matriz de migração intercontinental (de -\> para) de
+    refugiados do ano 2005.
+
+```{r}
+    
+    dados_origem <- refugiados %>%
+      filter(ano == 2005) %>%
+        pull(regiao_origem)
+    
+    dados_chegada <- refugiados %>%
+      filter(ano == 2005) %>%
+        pull(regiao)
+    
+    matriz_intercontinental <- matrix(
+      c(dados_origem, dados_chegada),
+      byrow = FALSE,
+      nrow = length(dados_origem),
+      ncol = 2
+    )
+    
+    matriz_intercontinental
+    
+```
+
+d.  Qual o país que mais recebeu refugiados em 2005? E em 2010?
+
+```{r}
+
+refugiados %>%
+  filter(ano == 2005) %>%
+    group_by(nome) %>%
+      summarise(refug = sum(refugiados)) %>%
+      arrange(desc(refug)) %>%
+      head(1)
+      
+refugiados %>%
+  filter(ano == 2010) %>%
+    group_by(nome) %>%
+      summarise(refug = sum(refugiados)) %>%
+      arrange(desc(refug)) %>%
+      head(1)
+
+```
+
+e.  Quantos refugiados os 3 países que mais receberam refugiados em 2010
+    receberam em 2005?
+
+```{r}
+
+paises <- refugiados %>%
+  filter(ano == 2010) %>%
+    group_by(nome) %>%
+      summarise(refug = sum(refugiados)) %>%
+      arrange(desc(refug)) %>%
+      head(3) %>%
+      pull(nome)
+
+refugiados %>%
+  filter(ano == 2005 & nome %in% paises) %>%
+  group_by(nome) %>%
+  summarise(total = sum(refugiados))
+
+```
